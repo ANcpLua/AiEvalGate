@@ -37,7 +37,7 @@ public sealed class StructuredOutputConformanceTests
     };
 
     [TestMethod]
-    public void Conforming_output_passes()
+    public void Analyze_ConformingOutput_Passes()
     {
         AnalysisResult a = StructuredOutputConformanceEvaluator.Analyze(
             Record("""{"severity":"high","confidence":0.9,"resolved":false}""", Contract()));
@@ -45,7 +45,7 @@ public sealed class StructuredOutputConformanceTests
     }
 
     [TestMethod]
-    public void Missing_required_property_fails()
+    public void Analyze_MissingRequiredProperty_Fails()
     {
         AnalysisResult a = StructuredOutputConformanceEvaluator.Analyze(
             Record("""{"severity":"high","confidence":0.9}""", Contract()));
@@ -54,7 +54,7 @@ public sealed class StructuredOutputConformanceTests
     }
 
     [TestMethod]
-    public void Wrong_value_kind_fails()
+    public void Analyze_WrongValueKind_Fails()
     {
         AnalysisResult a = StructuredOutputConformanceEvaluator.Analyze(
             Record("""{"severity":"high","confidence":"very","resolved":false}""", Contract()));
@@ -63,7 +63,7 @@ public sealed class StructuredOutputConformanceTests
     }
 
     [TestMethod]
-    public void Forbidden_property_fails()
+    public void Analyze_ForbiddenProperty_Fails()
     {
         AnalysisResult a = StructuredOutputConformanceEvaluator.Analyze(
             Record("""{"severity":"high","confidence":0.9,"resolved":false,"internalDebugTrace":"x"}""", Contract()));
@@ -72,14 +72,14 @@ public sealed class StructuredOutputConformanceTests
     }
 
     [TestMethod]
-    public void No_contract_passes_vacuously()
+    public void Analyze_NoContract_PassesVacuously()
     {
         AnalysisResult a = StructuredOutputConformanceEvaluator.Analyze(Record("""{"anything":1}""", contract: null));
         Assert.IsTrue(a.Passed, a.Reason);
     }
 
     [TestMethod]
-    public void Missing_structured_output_with_a_contract_fails()
+    public void Analyze_MissingStructuredOutputWithContract_Fails()
     {
         AnalysisResult a = StructuredOutputConformanceEvaluator.Analyze(Record(structuredJson: null, Contract()));
         Assert.IsFalse(a.Passed);

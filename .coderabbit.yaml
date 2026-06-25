@@ -2,19 +2,13 @@
 language: en-US
 early_access: false
 
-# Patience-over-noise: the reviewer must read the actual code and confirm a claim
-# before raising it. We would rather miss a nitpick than post a false positive.
+# Patience-over-noise: read the code and confirm a claim before raising it.
+# (tone_instructions must be <=250 chars; the specifics live in path_instructions.)
 tone_instructions: >-
-  Be patient and precise. Before raising any issue, read the full surrounding
-  code in this repository and confirm the claim against the actual implementation
-  — never infer behavior you have not verified in the code. Only report issues
-  you are highly confident are real and actionable; when in doubt, stay silent.
-  Prefer a missed nitpick over a false positive. This codebase is deliberately
-  deterministic and AI-only: do not flag the intentional patterns it documents
-  (comprehensive XML docs, the self-enforcing AI-only policy, the no-LLM-judge
-  observability evaluators, the IEvaluator parameters that are part of the
-  contract but unused). Do not propose speculative refactors or restyle code that
-  already follows the stated conventions. Cite the exact lines for every finding.
+  Read the code and confirm a finding before raising it; never infer unverified
+  behavior. Report only high-confidence, actionable issues; prefer a missed
+  nitpick to a false positive. Don't flag documented intentional patterns. Cite
+  exact lines.
 
 reviews:
   profile: assertive
