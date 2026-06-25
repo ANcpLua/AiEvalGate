@@ -32,4 +32,11 @@ internal static class ObservabilityMetricNames
     /// (for example containing an <c>@</c>, a <c>Bearer </c> token, or an <c>sk-</c> key prefix).
     /// </summary>
     public const string CardinalitySafety = "observability.cardinality.safety";
+    /// <summary>
+    /// Metric-name key for the structured-output conformance check, emitted as a pass/fail <c>BooleanMetric</c> by
+    /// <c>StructuredOutputConformanceEvaluator</c> via <c>EvaluationMetricFactory.CreateBoolean</c>. The check passes
+    /// when no output contract is declared, or when the agent's structured output is a JSON object that contains every
+    /// required property with the required value kind and none of the forbidden properties.
+    /// </summary>
+    public const string OutputSchema = "observability.output.schema";
 }

@@ -13,5 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/AiEvalGate.Core/AiEvalGate.Core.csproj" />
     <ProjectReference Include="../../src/AiEvalGate.SampleApp/AiEvalGate.SampleApp.csproj" />
+    <ProjectReference Include="../../src/AiEvalGate.Observability/AiEvalGate.Observability.csproj" />
   </ItemGroup>
 </Project>
