@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/AiEvalGate.Core/AiEvalGate.Core.csproj" />
+  <Project Path="src/AiEvalGate.SampleApp/AiEvalGate.SampleApp.csproj" />
+  <Project Path="src/AiEvalGate.Runner/AiEvalGate.Runner.csproj" />
+  <Project Path="src/AiEvalGate.Observability/AiEvalGate.Observability.csproj" />
+  <Project Path="eng/AiEvalGate.ScaffoldGenerator/AiEvalGate.ScaffoldGenerator.csproj" />
+  <Project Path="tests/AiEvalGate.EvaluationTests/AiEvalGate.EvaluationTests.csproj" />
+</Solution>

@@ -1,0 +1,4 @@
+<Project>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="'$(_MustImportMicrosoftNETSdk)' == 'true'" />
+  <Import Project="$(MSBuildThisFileDirectory)..\Build\Enforcement\AiEvalGateEvaluation.targets" />
+</Project>

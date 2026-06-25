@@ -1,0 +1,10 @@
+bin/
+obj/
+artifacts/
+.vs/
+.idea/
+*.user
+*.suo
+.env
+[Tt]est[Rr]esults/
+*.trx

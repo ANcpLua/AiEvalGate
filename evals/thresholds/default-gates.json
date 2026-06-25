@@ -1,0 +1,27 @@
+{
+  "requiredReviewers": [
+    "ArchitectureReviewer",
+    "GroundingReviewer",
+    "RetrievalReviewer",
+    "ToolUseReviewer",
+    "SafetyReviewer",
+    "SecurityReviewer",
+    "RedTeamReviewer",
+    "RegressionReviewer"
+  ],
+  "minMetrics": {
+    "Relevance": 4.0,
+    "Coherence": 4.0,
+    "Completeness": 3.5,
+    "Groundedness": 4.0
+  },
+  "minReviewerScore": 0.85,
+  "blockSeverities": ["P0", "P1"],
+  "requireAllReviewerPasses": true,
+  "serviceBoundaryStrict": true,
+  "aiOnlyPolicy": {
+    "humanReviewRequired": false,
+    "manualOverrideAllowed": false,
+    "manualApprovalSteps": 0
+  }
+}

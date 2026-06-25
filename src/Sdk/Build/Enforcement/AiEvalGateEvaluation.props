@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <AiEvalGateEvaluationRequired>true</AiEvalGateEvaluationRequired>
+    <AiOnlyHumanReviewRequired>false</AiOnlyHumanReviewRequired>
+    <AiOnlyManualOverrideAllowed>false</AiOnlyManualOverrideAllowed>
+  </PropertyGroup>
+</Project>

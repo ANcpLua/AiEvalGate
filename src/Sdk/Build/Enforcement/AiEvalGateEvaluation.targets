@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="AiEvalGateEvaluationPolicyBanner" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="AI-only evaluation policy active: humanReviewRequired=false manualOverrideAllowed=false" />
+  </Target>
+</Project>
