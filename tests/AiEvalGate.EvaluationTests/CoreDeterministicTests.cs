@@ -58,7 +58,7 @@ public sealed class CoreDeterministicTests
     // ---- AiEvalGatekeeper ----
 
     [TestMethod]
-    public void Gate_passes_when_nothing_blocks()
+    public void Evaluate_NothingBlocks_Passes()
     {
         GateResult gate = AiEvalGatekeeper.Evaluate(Scenario(), Run(), [], [], [], Policy());
 
@@ -67,7 +67,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Gate_fails_closed_when_human_review_is_re_enabled()
+    public void Evaluate_HumanReviewReEnabled_FailsClosed()
     {
         GatePolicy broken = Policy(aiOnly: new AiOnlyPolicy
         {
@@ -83,7 +83,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Gate_fails_when_a_required_reviewer_is_absent()
+    public void Evaluate_RequiredReviewerMissing_Fails()
     {
         GateResult gate = AiEvalGatekeeper.Evaluate(
             Scenario(), Run(), [], [], [], Policy(requiredReviewers: ["SafetyReviewer"]));
@@ -93,7 +93,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Gate_fails_on_a_blocking_reviewer_severity()
+    public void Evaluate_BlockingReviewerSeverity_Fails()
     {
         AgentReview review = new()
         {
@@ -112,7 +112,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Gate_fails_when_a_metric_is_below_threshold()
+    public void Evaluate_MetricBelowThreshold_Fails()
     {
         MetricScore score = new() { Name = "relevance", Value = 0.5, Reason = "weak" };
 
@@ -125,7 +125,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Gate_promotes_boundary_failures_to_blockers_only_when_strict()
+    public void Evaluate_BoundaryFailures_BlockOnlyWhenStrict()
     {
         GateResult strict = AiEvalGatekeeper.Evaluate(
             Scenario(), Run(), [], [], ["missing OrchestratorService"], Policy(serviceBoundaryStrict: true));
@@ -140,7 +140,7 @@ public sealed class CoreDeterministicTests
     // ---- ServiceBoundaryValidator ----
 
     [TestMethod]
-    public void Validator_reports_missing_contract_for_unknown_architecture()
+    public void Validate_UnknownArchitecture_ReportsMissingContract()
     {
         ServiceBoundaryContract contract = new() { Name = "monolith", Architecture = "monolith" };
 
@@ -151,7 +151,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Validator_reports_missing_required_service()
+    public void Validate_MissingRequiredService_ReportsFailure()
     {
         ServiceBoundaryContract contract = new()
         {
@@ -167,7 +167,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Validator_reports_forbidden_tool_use()
+    public void Validate_ForbiddenToolUse_ReportsFailure()
     {
         ServiceBoundaryContract contract = new()
         {
@@ -184,7 +184,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Validator_passes_a_satisfied_contract()
+    public void Validate_SatisfiedContract_Passes()
     {
         ServiceBoundaryContract contract = new()
         {
@@ -206,14 +206,14 @@ public sealed class CoreDeterministicTests
     // ---- ScenarioLoader ----
 
     [TestMethod]
-    public void Loader_throws_for_a_missing_file()
+    public void LoadJsonl_MissingFile_Throws()
     {
         Assert.ThrowsExactly<FileNotFoundException>(
             () => ScenarioLoader.LoadJsonl(Path.Combine(Path.GetTempPath(), "does-not-exist.jsonl")));
     }
 
     [TestMethod]
-    public void Loader_skips_blank_and_comment_lines()
+    public void LoadJsonl_BlankAndCommentLines_AreSkipped()
     {
         string path = WriteTemp(
             "# a comment\n" +
@@ -232,7 +232,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Loader_rejects_a_scenario_with_a_blank_id()
+    public void LoadJsonl_BlankId_Throws()
     {
         string path = WriteTemp("{\"id\":\"\",\"area\":\"a\",\"architecture\":\"monolith\",\"userInput\":\"hi\"}\n");
         try
@@ -248,14 +248,14 @@ public sealed class CoreDeterministicTests
     // ---- GatePolicy.Load ----
 
     [TestMethod]
-    public void Policy_load_throws_for_a_missing_file()
+    public void Load_MissingFile_Throws()
     {
         Assert.ThrowsExactly<FileNotFoundException>(
             () => GatePolicy.Load(Path.Combine(Path.GetTempPath(), "no-policy.json")));
     }
 
     [TestMethod]
-    public void Policy_load_wraps_malformed_json_with_context()
+    public void Load_MalformedJson_WrapsWithContext()
     {
         string path = WriteTemp("{ this is not valid json ");
         try
@@ -271,7 +271,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void Policy_repo_default_enforces_the_ai_only_invariant()
+    public void Load_RepoDefault_EnforcesAiOnlyInvariant()
     {
         string root = TestPaths.FindRepositoryRoot();
         GatePolicy policy = GatePolicy.Load(Path.Combine(root, "evals", "thresholds", "default-gates.json"));
@@ -284,7 +284,7 @@ public sealed class CoreDeterministicTests
     // ---- GateResult.ToFailureMessage ----
 
     [TestMethod]
-    public void FailureMessage_lists_every_blocker_when_failed()
+    public void ToFailureMessage_Failed_ListsEveryBlocker()
     {
         GateResult gate = new()
         {
@@ -301,7 +301,7 @@ public sealed class CoreDeterministicTests
     }
 
     [TestMethod]
-    public void FailureMessage_is_a_pass_note_when_passed()
+    public void ToFailureMessage_Passed_IsPassNote()
     {
         GateResult gate = new() { ScenarioId = "s1", Passed = true };
 

@@ -16,10 +16,17 @@ namespace AiEvalGate.EvaluationTests;
 public sealed class AiEvalGateEvaluationTests
 {
     [TestMethod]
+    [TestCategory("LiveLlmJudge")]
     [DataRow("evals/scenarios/refund-policy.jsonl")]
     [DataRow("evals/scenarios/security.jsonl")]
     public async Task ScenarioPackPassesAiEvalGateEvaluationGates(string scenarioPack)
     {
+        if (!LiveLlmJudgeTestsEnabled())
+        {
+            TestContext.WriteLine("Set AI_EVAL_RUN_LIVE_EVALS=true (requires ANTHROPIC_API_KEY and available quota) to run the live LLM-judge evaluation test.");
+            return;
+        }
+
         string root = TestPaths.FindRepositoryRoot();
         string artifactRoot = Environment.GetEnvironmentVariable("AI_EVAL_ARTIFACT_DIR")
             ?? Path.Combine(root, "artifacts", "ai-eval");
@@ -63,4 +70,7 @@ public sealed class AiEvalGateEvaluationTests
     }
 
     public TestContext TestContext { get; set; } = null!;
+
+    private static bool LiveLlmJudgeTestsEnabled() =>
+        string.Equals(Environment.GetEnvironmentVariable("AI_EVAL_RUN_LIVE_EVALS"), "true", StringComparison.OrdinalIgnoreCase);
 }
