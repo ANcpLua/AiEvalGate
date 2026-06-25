@@ -39,4 +39,11 @@ internal static class ObservabilityMetricNames
     /// required property with the required value kind and none of the forbidden properties.
     /// </summary>
     public const string OutputSchema = "observability.output.schema";
+    /// <summary>
+    /// Metric-name key for the tool-call-ordering check, emitted as a pass/fail <c>BooleanMetric</c> by
+    /// <c>ToolCallOrderingEvaluator</c> via <c>EvaluationMetricFactory.CreateBoolean</c>. The check passes when no
+    /// ordering constraints are declared, or when every declared happens-before constraint holds — that is, every
+    /// call to a constraint's <c>after</c> tool is preceded by at least one call to its <c>before</c> tool.
+    /// </summary>
+    public const string ToolOrder = "observability.tool.order";
 }

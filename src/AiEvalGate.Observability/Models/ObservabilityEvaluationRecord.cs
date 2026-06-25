@@ -122,6 +122,14 @@ public sealed record ObservabilityEvaluationRecord
     public OutputContract? OutputContract { get; init; }
 
     /// <summary>
+    /// Happens-before ordering constraints the agent's <see cref="ToolCalls"/> must satisfy — each requires
+    /// every call to its <c>after</c> tool to be preceded by a call to its <c>before</c> tool.
+    /// <c>ToolCallOrderingEvaluator</c> checks these; an empty list passes vacuously. Defaults to empty.
+    /// </summary>
+    [JsonPropertyName("expectedToolOrder")]
+    public IReadOnlyList<ToolOrderConstraint> ExpectedToolOrder { get; init; } = [];
+
+    /// <summary>
     /// The metric names (for example <c>observability.telemetry.evidence</c> or
     /// <c>observability.trace.correlation</c>) that this record is expected to fail. <c>ScenarioRunResult.Create</c>
     /// compares the set of metrics that actually failed against this list and records a mismatch when they
