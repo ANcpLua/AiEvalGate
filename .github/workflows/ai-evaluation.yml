@@ -1,0 +1,104 @@
+name: AI-only evaluation gates
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  dotnet-ai-evals:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      AI_EVAL_REVIEW_MODEL: ${{ vars.AI_EVAL_REVIEW_MODEL || 'claude-haiku-4-5' }}
+      AI_EVAL_ARTIFACT_DIR: ${{ github.workspace }}/artifacts/ai-eval
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore tests/AiEvalGate.EvaluationTests/AiEvalGate.EvaluationTests.csproj
+
+      - name: Unit and service-boundary tests
+        run: dotnet test tests/AiEvalGate.EvaluationTests/AiEvalGate.EvaluationTests.csproj --configuration Release --logger "trx;LogFileName=ai-eval-tests.trx" --results-directory artifacts/test-results
+
+      - name: AI-only evaluation runner
+        run: |
+          dotnet run --configuration Release --project src/AiEvalGate.Runner/AiEvalGate.Runner.csproj -- \
+            --scenario evals/scenarios/refund-policy.jsonl \
+            --scenario evals/scenarios/security.jsonl \
+            --out artifacts/ai-eval
+
+      - name: Install Microsoft AI eval report tool
+        run: dotnet tool install --create-manifest-if-needed Microsoft.Extensions.AI.Evaluation.Console --version 10.6.0
+
+      - name: Generate Microsoft-style report when storage exists
+        shell: bash
+        run: |
+          if [ -d artifacts/microsoft-eval ]; then
+            dotnet tool run aieval report --path artifacts/microsoft-eval --output artifacts/ai-eval/microsoft-aieval-report.html
+          else
+            echo "No Microsoft disk-based eval storage found; scaffold report is in artifacts/ai-eval/index.html"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: aievalgate-evaluation-artifacts
+          path: |
+            artifacts/ai-eval/**
+            artifacts/test-results/**
+
+  observability-evals:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Deterministic observability evaluation gate
+        run: dotnet run --project src/AiEvalGate.Observability/AiEvalGate.Observability.csproj --configuration Release
+
+  claude-ai-review:
+    runs-on: ubuntu-latest
+    needs: dotnet-ai-evals
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run Claude AI reviewer panel
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p artifacts/ai-review
+          claude -p "Follow the orchestrator instructions in .github/ai-review/prompts/ai-reviewer-orchestrator.md. End your reply with exactly one JSON object conforming to .github/ai-review/schemas/ai-review.schema.json." \
+            --model claude-haiku-4-5 \
+            --max-turns 50 \
+            --allowedTools "Read,Glob,Grep,Bash" \
+            > artifacts/ai-review/ai-review.json
+
+      - name: Validate AI review JSON gate
+        run: node scripts/validate-ai-review.mjs artifacts/ai-review/ai-review.json
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: claude-ai-review
+          path: artifacts/ai-review/**
