@@ -1,6 +1,21 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: en-US
 early_access: false
+
+# Patience-over-noise: the reviewer must read the actual code and confirm a claim
+# before raising it. We would rather miss a nitpick than post a false positive.
+tone_instructions: >-
+  Be patient and precise. Before raising any issue, read the full surrounding
+  code in this repository and confirm the claim against the actual implementation
+  — never infer behavior you have not verified in the code. Only report issues
+  you are highly confident are real and actionable; when in doubt, stay silent.
+  Prefer a missed nitpick over a false positive. This codebase is deliberately
+  deterministic and AI-only: do not flag the intentional patterns it documents
+  (comprehensive XML docs, the self-enforcing AI-only policy, the no-LLM-judge
+  observability evaluators, the IEvaluator parameters that are part of the
+  contract but unused). Do not propose speculative refactors or restyle code that
+  already follows the stated conventions. Cite the exact lines for every finding.
+
 reviews:
   profile: assertive
   request_changes_workflow: true
@@ -8,6 +23,8 @@ reviews:
   review_status: true
   poem: false
   collapse_walkthrough: false
+  # Suppress trivia so the signal that remains is trustworthy.
+  abort_on_close: true
   auto_review:
     enabled: true
     drafts: false
@@ -16,28 +33,25 @@ reviews:
   path_instructions:
     - path: "src/**/*.cs"
       instructions: >-
-        Public C# 14 / .NET 10 library. Enforce as blocking: idiomatic modern C#
-        (collection expressions, primary constructors, pattern matching);
-        correct async/await with no sync-over-async and a CancellationToken
-        threaded through every public async method; nullable-reference
-        correctness (NRTs are enabled, warnings are errors); sealed by default;
-        XML doc comments on every public type and member. Flag any line that is
-        less clear than it could be. This is a safety-evaluation tool: treat
-        scenario and run-result text as untrusted when it flows into judge or
-        reviewer prompts, into file paths, or into process arguments.
+        Public C# 14 / .NET 10 library. Flag, only when verified against the
+        code: incorrect async/await or a missing CancellationToken on a public
+        async method; nullable-reference contract violations (NRTs on, warnings
+        are errors); a genuinely wrong result, off-by-one, or unhandled input;
+        and untrusted scenario/run text reaching a judge prompt, a file path, or
+        a process argument without being treated as data. Do NOT flag missing
+        XML docs (the public surface is already documented), style preferences,
+        or the deliberate determinism of the evaluators. If you cannot point at
+        the concrete failing line, do not raise the issue.
     - path: "tests/**/*.cs"
       instructions: >-
-        Tests must pin behavior, not line coverage. Reject vague assertions
-        (toBeTruthy-style checks, "it ran" with no observed effect). Every test
-        should fail under a plausible mutation of the code it exercises; if it
-        would not, say which mutation it survives.
+        Tests must pin behavior, not coverage. Only flag a test if you can name
+        the specific mutation of the code-under-test it would fail to catch.
+        Do not ask for more tests in the abstract.
     - path: ".github/workflows/**"
       instructions: >-
-        Pin actions, keep secrets out of logs, and prefer least-privilege
-        permissions. The observability and Foundry-sample gates must stay
-        runnable without any API key.
-  tools:
-    github-checks:
-      enabled: true
+        Verify before flagging: unpinned actions, secrets that could reach logs,
+        or over-broad permissions. The observability and Foundry-sample gates
+        must stay runnable without any API key.
+
 chat:
   auto_reply: true
