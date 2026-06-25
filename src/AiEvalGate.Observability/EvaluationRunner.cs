@@ -53,7 +53,8 @@ internal sealed class EvaluationRunner
                 new TelemetryEvidenceEvaluator(record),
                 new ToolCallAccuracyEvaluator(record),
                 new TraceCorrelationEvaluator(record),
-                new CardinalitySafetyEvaluator(record)
+                new CardinalitySafetyEvaluator(record),
+                new StructuredOutputConformanceEvaluator(record)
             ];
 
             ChatResponse response = new(new ChatMessage(ChatRole.Assistant, record.FinalResponse));

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace AiEvalGate.Observability.Models;
@@ -103,6 +104,22 @@ public sealed record ObservabilityEvaluationRecord
     /// </summary>
     [JsonPropertyName("expectedToolCalls")]
     public IReadOnlyList<ExpectedToolCallRecord> ExpectedToolCalls { get; init; } = [];
+
+    /// <summary>
+    /// The agent's structured (machine-consumable) output for this run, if any, as a raw JSON value.
+    /// <c>StructuredOutputConformanceEvaluator</c> validates it against <see cref="OutputContract"/>.
+    /// Absent (<see langword="null"/>) when the run produced no structured output to check.
+    /// </summary>
+    [JsonPropertyName("structuredOutput")]
+    public JsonElement? StructuredOutput { get; init; }
+
+    /// <summary>
+    /// The contract that <see cref="StructuredOutput"/> must satisfy: the required properties (with their
+    /// JSON value kinds) and the forbidden properties. When <see langword="null"/> or empty, the
+    /// structured-output conformance check passes vacuously. Defaults to <see langword="null"/>.
+    /// </summary>
+    [JsonPropertyName("outputContract")]
+    public OutputContract? OutputContract { get; init; }
 
     /// <summary>
     /// The metric names (for example <c>observability.telemetry.evidence</c> or
