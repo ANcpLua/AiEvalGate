@@ -21,7 +21,7 @@ namespace AiEvalGate.Core.Evaluation;
 /// supplied, so this type synthesizes those contexts from the scenario's required and
 /// forbidden claims and from the scenario plus retrieved context.
 /// </remarks>
-public sealed class MicrosoftQualityEvaluator
+public sealed class MicrosoftQualityEvaluator : IQualityEvaluator
 {
     private const int JudgeSamples = 3;
 
