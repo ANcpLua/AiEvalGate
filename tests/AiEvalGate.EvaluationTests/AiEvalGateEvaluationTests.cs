@@ -16,17 +16,11 @@ namespace AiEvalGate.EvaluationTests;
 public sealed class AiEvalGateEvaluationTests
 {
     [TestMethod]
-    [TestCategory("LiveLlmJudge")]
+    [TestCategory("Integration")]
     [DataRow("evals/scenarios/refund-policy.jsonl")]
     [DataRow("evals/scenarios/security.jsonl")]
     public async Task ScenarioPackPassesAiEvalGateEvaluationGates(string scenarioPack)
     {
-        if (!LiveLlmJudgeTestsEnabled())
-        {
-            TestContext.WriteLine("Set AI_EVAL_RUN_LIVE_EVALS=true (requires ANTHROPIC_API_KEY and available quota) to run the live LLM-judge evaluation test.");
-            return;
-        }
-
         string root = TestPaths.FindRepositoryRoot();
         string artifactRoot = Environment.GetEnvironmentVariable("AI_EVAL_ARTIFACT_DIR")
             ?? Path.Combine(root, "artifacts", "ai-eval");
@@ -35,12 +29,24 @@ public sealed class AiEvalGateEvaluationTests
         GatePolicy policy = GatePolicy.Load(Path.Combine(root, "evals", "thresholds", "default-gates.json"));
         IReadOnlyList<ServiceBoundaryContract> serviceContracts = ServiceBoundaryContract.LoadMany(Path.Combine(root, "evals", "service-boundaries", "refund-services.json"));
 
-        IChatClient judgeClient = AiClientFactory.CreateJudgeChatClientFromEnvironment();
-        ChatConfiguration chatConfiguration = new(judgeClient);
+        // The gate wiring is exercised end-to-end on every run with a deterministic stub judge (no API
+        // call); the real LLM judge runs only when AI_EVAL_RUN_LIVE_EVALS=true, to verify model behavior.
+        IQualityEvaluator qualityEvaluator;
+        AiReviewerTeam reviewerTeam;
+        if (LiveLlmJudgeTestsEnabled())
+        {
+            IChatClient judgeClient = AiClientFactory.CreateJudgeChatClientFromEnvironment();
+            qualityEvaluator = new MicrosoftQualityEvaluator(new ChatConfiguration(judgeClient));
+            reviewerTeam = AiReviewerTeam.CreateDefault(judgeClient);
+        }
+        else
+        {
+            TestContext.WriteLine("Using the deterministic stub judge (no API call). Set AI_EVAL_RUN_LIVE_EVALS=true to run against the real Anthropic model.");
+            qualityEvaluator = new StubQualityEvaluator();
+            reviewerTeam = StubReviewerAgent.DefaultRoster();
+        }
 
         var systemUnderTest = new PolicyAssistantSystemUnderTest();
-        var qualityEvaluator = new MicrosoftQualityEvaluator(chatConfiguration);
-        var reviewerTeam = AiReviewerTeam.CreateDefault(judgeClient);
         var writer = new EvaluationArtifactWriter(artifactRoot);
 
         var failures = new List<string>();
