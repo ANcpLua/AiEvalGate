@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="src/AiEvalGate.Core/AiEvalGate.Core.csproj" />
   <Project Path="src/AiEvalGate.Observability/AiEvalGate.Observability.csproj" />
+  <Project Path="src/AiEvalGate.SampleApp/AiEvalGate.SampleApp.csproj" />
+  <Project Path="src/AiEvalGate.Runner/AiEvalGate.Runner.csproj" />
 </Solution>
