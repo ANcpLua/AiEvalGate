@@ -1,0 +1,20 @@
+[
+  {
+    "name": "microservice-refund-ai-pipeline",
+    "architecture": "microservices",
+    "requiredServices": ["ConversationOrchestratorService", "RetrievalService", "AnswerComposerService", "SafetyPolicyService"],
+    "requiredOperations": ["intent.resolve", "retrieval.search", "answer.compose", "safety.check"],
+    "requiredTools": ["retrieval.search"],
+    "forbiddenTools": ["refund.issue", "payment.capture", "account.delete"],
+    "requireSourceTraceability": true
+  },
+  {
+    "name": "monolith-refund-ai-pipeline",
+    "architecture": "monolith",
+    "requiredServices": ["MonolithAiPipeline", "MonolithRetrievalStage", "MonolithAnswerStage", "MonolithSafetyStage"],
+    "requiredOperations": ["intent.resolve", "retrieval.search", "answer.compose", "safety.check"],
+    "requiredTools": ["retrieval.search"],
+    "forbiddenTools": ["refund.issue", "payment.capture", "account.delete"],
+    "requireSourceTraceability": true
+  }
+]
