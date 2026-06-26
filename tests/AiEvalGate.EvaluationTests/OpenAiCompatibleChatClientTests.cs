@@ -58,6 +58,18 @@ public sealed class OpenAiCompatibleChatClientTests
         Assert.IsFalse(handler.CapturedBody!.Contains("max_completion_tokens", StringComparison.Ordinal));
         Assert.AreEqual("bitnet-b1.58-2B-4T", body.RootElement.GetProperty("model").GetString());
         Assert.AreEqual("system", body.RootElement.GetProperty("messages")[0].GetProperty("role").GetString());
+        Assert.AreEqual("user", body.RootElement.GetProperty("messages")[1].GetProperty("role").GetString());
+    }
+
+    [TestMethod]
+    public async Task GetResponseAsync_BaseWithoutTrailingSlash_StillTargetsV1ChatCompletions()
+    {
+        var handler = new CapturingHandler("""{"choices":[]}""");
+        var client = new OpenAiCompatibleChatClient(new Uri("http://localhost:11434/v1"), "m", httpClient: new HttpClient(handler));
+
+        await client.GetResponseAsync([new ChatMessage(ChatRole.User, "x")]);
+
+        StringAssert.EndsWith(handler.CapturedUri!.AbsolutePath, "/v1/chat/completions");
     }
 
     [TestMethod]

@@ -45,7 +45,10 @@ public sealed class OpenAiCompatibleChatClient : IChatClient
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
 
-        _completionsUri = new Uri(endpoint, "chat/completions");
+        // Ensure a trailing slash so "chat/completions" resolves under the base path (e.g. /v1/)
+        // instead of replacing the base's last segment (which would drop /v1).
+        Uri apiBase = endpoint.AbsoluteUri.EndsWith('/') ? endpoint : new Uri(endpoint.AbsoluteUri + "/");
+        _completionsUri = new Uri(apiBase, "chat/completions");
         _model = model;
         _defaultMaxOutputTokens = defaultMaxOutputTokens;
         _ownsHttpClient = httpClient is null;

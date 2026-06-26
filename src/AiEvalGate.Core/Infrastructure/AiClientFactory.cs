@@ -82,8 +82,12 @@ public static class AiClientFactory
             ?? throw new InvalidOperationException("Set AI_EVAL_OPENAI_BASE_URL or BITNET_URL for the 'openai' judge provider.");
         string model = FirstEnvironment("AI_EVAL_REVIEW_MODEL", "BITNET_MODEL") ?? "bitnet-b1.58-2B-4T";
         string? apiKey = Environment.GetEnvironmentVariable("AI_EVAL_OPENAI_API_KEY");
-        var endpoint = new Uri(baseUrl.TrimEnd('/') + "/v1/");
-        return new OpenAiCompatibleChatClient(endpoint, model, apiKey);
+
+        // Append the OpenAI-compatible /v1 base only when the caller didn't already include it, so both
+        // http://host:port and http://host:port/v1 resolve to a single /v1/ (no double /v1/v1/).
+        string trimmed = baseUrl.TrimEnd('/');
+        string apiBase = trimmed.EndsWith("/v1", StringComparison.OrdinalIgnoreCase) ? trimmed : trimmed + "/v1";
+        return new OpenAiCompatibleChatClient(new Uri(apiBase + "/"), model, apiKey);
     }
 
     private static string? FirstEnvironment(params string[] names)
