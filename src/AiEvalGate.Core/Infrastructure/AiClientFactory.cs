@@ -5,24 +5,43 @@ using Microsoft.Extensions.AI.Evaluation;
 namespace AiEvalGate.Core.Infrastructure;
 
 /// <summary>
-/// Builds the Anthropic-backed <see cref="IChatClient"/> judge used to score evaluation runs,
-/// reading its API key and model name from environment variables.
+/// Builds the <see cref="IChatClient"/> judge used to score evaluation runs, selecting the provider
+/// from the <c>AI_EVAL_JUDGE</c> environment variable and reading model/endpoint settings from the
+/// environment.
 /// </summary>
 /// <remarks>
-/// Enforces the AI-only policy invariant: the single <see cref="IChatClient"/> produced here is a real
-/// Claude judge that is consumed both by the Microsoft.Extensions.AI quality evaluators (wrapped in a
-/// <see cref="ChatConfiguration"/>) and by the reviewer agents in <c>AiReviewerTeam</c>. There is no
-/// heuristic or stubbed judge path; every metric and review is produced by this live model.
+/// <para><c>AI_EVAL_JUDGE</c> selects the live judge provider (default <c>anthropic</c>):</para>
+/// <list type="bullet">
+///   <item><c>anthropic</c> — a Claude judge from <c>ANTHROPIC_API_KEY</c> + <c>AI_EVAL_REVIEW_MODEL</c>.</item>
+///   <item><c>openai</c> — any OpenAI-compatible endpoint (e.g. a local bitnet.cpp / llama-server) from
+///   <c>AI_EVAL_OPENAI_BASE_URL</c> (or <c>BITNET_URL</c>) + <c>AI_EVAL_REVIEW_MODEL</c> (or <c>BITNET_MODEL</c>).</item>
+/// </list>
+/// <para>The single produced client is consumed both by the Microsoft.Extensions.AI quality evaluators
+/// (wrapped in a <see cref="ChatConfiguration"/>) and by the reviewer agents in <c>AiReviewerTeam</c>.
+/// A deterministic stub judge (used by default in CI) lives in the test project, not here.</para>
 /// </remarks>
 public static class AiClientFactory
 {
     /// <summary>
-    /// Creates the judge <see cref="IChatClient"/> from the <c>ANTHROPIC_API_KEY</c> and
-    /// <c>AI_EVAL_REVIEW_MODEL</c> environment variables.
+    /// Creates the judge <see cref="IChatClient"/> for the provider named by <c>AI_EVAL_JUDGE</c>
+    /// (<c>anthropic</c> by default, or <c>openai</c> for an OpenAI-compatible endpoint).
     /// </summary>
-    /// <returns>
-    /// An <see cref="IChatClient"/> wrapping an <see cref="AnthropicClient"/> for the configured model.
-    /// </returns>
+    /// <returns>The configured live judge client.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <c>AI_EVAL_JUDGE</c> names an unknown provider, or a required environment variable for the
+    /// selected provider is missing or whitespace.
+    /// </exception>
+    public static IChatClient CreateJudgeChatClientFromEnvironment()
+    {
+        string provider = (Environment.GetEnvironmentVariable("AI_EVAL_JUDGE") ?? "anthropic").Trim().ToLowerInvariant();
+        return provider switch
+        {
+            "" or "anthropic" => CreateAnthropicJudge(),
+            "openai" or "openai-compatible" or "bitnet" or "local" => CreateOpenAiCompatibleJudge(),
+            _ => throw new InvalidOperationException($"Unknown AI_EVAL_JUDGE '{provider}'. Use 'anthropic' or 'openai'."),
+        };
+    }
+
     /// <remarks>
     /// Configures the Anthropic seam: a default <c>maxOutputTokens</c> of 16000 (which an evaluator's own
     /// <see cref="ChatOptions"/> override when it sets <c>MaxOutputTokens</c>, since Anthropic requires
@@ -30,11 +49,7 @@ public static class AiClientFactory
     /// <see cref="ChatOptions.Temperature"/> and <see cref="ChatOptions.TopP"/> are set, because Claude 4+
     /// rejects sending temperature and top_p together while the quality evaluators send both.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the <c>ANTHROPIC_API_KEY</c> or <c>AI_EVAL_REVIEW_MODEL</c> environment variable is missing
-    /// or whitespace.
-    /// </exception>
-    public static IChatClient CreateJudgeChatClientFromEnvironment()
+    private static IChatClient CreateAnthropicJudge()
     {
         string apiKey = RequiredEnvironment("ANTHROPIC_API_KEY");
         string model = RequiredEnvironment("AI_EVAL_REVIEW_MODEL");
@@ -52,6 +67,36 @@ public static class AiClientFactory
                 }
             })
             .Build();
+    }
+
+    /// <remarks>
+    /// Targets any OpenAI-compatible <c>/v1/chat/completions</c> endpoint (for example a local
+    /// bitnet.cpp / llama-server) via <see cref="OpenAiCompatibleChatClient"/>. The endpoint comes from
+    /// <c>AI_EVAL_OPENAI_BASE_URL</c> or <c>BITNET_URL</c>; the model from <c>AI_EVAL_REVIEW_MODEL</c> or
+    /// <c>BITNET_MODEL</c> (default <c>bitnet-b1.58-2B-4T</c>); an optional bearer token from
+    /// <c>AI_EVAL_OPENAI_API_KEY</c>.
+    /// </remarks>
+    private static IChatClient CreateOpenAiCompatibleJudge()
+    {
+        string baseUrl = FirstEnvironment("AI_EVAL_OPENAI_BASE_URL", "BITNET_URL")
+            ?? throw new InvalidOperationException("Set AI_EVAL_OPENAI_BASE_URL or BITNET_URL for the 'openai' judge provider.");
+        string model = FirstEnvironment("AI_EVAL_REVIEW_MODEL", "BITNET_MODEL") ?? "bitnet-b1.58-2B-4T";
+        string? apiKey = Environment.GetEnvironmentVariable("AI_EVAL_OPENAI_API_KEY");
+        var endpoint = new Uri(baseUrl.TrimEnd('/') + "/v1/");
+        return new OpenAiCompatibleChatClient(endpoint, model, apiKey);
+    }
+
+    private static string? FirstEnvironment(params string[] names)
+    {
+        foreach (string name in names)
+        {
+            if (Environment.GetEnvironmentVariable(name) is { Length: > 0 } value && !string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
