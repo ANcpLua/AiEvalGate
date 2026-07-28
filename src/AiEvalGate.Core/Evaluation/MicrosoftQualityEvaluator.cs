@@ -134,11 +134,11 @@ public sealed class MicrosoftQualityEvaluator : IQualityEvaluator
 
             foreach ((string name, List<NumericMetric> samples) in samplesByMetric)
             {
-                NumericMetric median = samples.OrderBy(m => m.Value ?? 0.0).ElementAt(samples.Count / 2);
+                NumericMetric median = samples.OrderBy(ValidScoreOrZero).ElementAt(samples.Count / 2);
                 scores.Add(new MetricScore
                 {
                     Name = name,
-                    Value = median.Value ?? 0.0,
+                    Value = ValidScoreOrZero(median),
                     Reason = median.Reason,
                     Interpretation = median.Interpretation?.ToString()
                 });
@@ -147,6 +147,11 @@ public sealed class MicrosoftQualityEvaluator : IQualityEvaluator
 
         return scores;
     }
+
+    // A score outside the judges' 1-5 rubric means the judge did not follow it; like an
+    // unparseable (null) score it maps to 0.0 so it can never clear a gate threshold.
+    private static double ValidScoreOrZero(NumericMetric metric) =>
+        metric.Value is double value and > 0.0 and <= 5.0 ? value : 0.0;
 
     private static string BuildGroundTruth(AiScenario scenario)
     {
